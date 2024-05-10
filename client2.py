@@ -64,7 +64,7 @@ def GroupChat():
     
 
 def send(client, addr):
-    path= "C:\\Users\\HP\\Documents\\python-project\\source"
+    path= "C:\\Users\\HP\\Documents\\Chatter_Share\\source"
     
     file_list= os.listdir(path)
     send=""
@@ -148,7 +148,7 @@ def startRecieve(host,port):
             break
         
         fl=client_socket.recv(1024).decode()
-        path= "C:\\Users\\HP\\Documents\\python-project\\target"
+        path= "C:\\Users\\HP\\Documents\\Chatter_Share\\target"
 
         if fl=="ERROR File Not Found":
             print("File name Error...")
