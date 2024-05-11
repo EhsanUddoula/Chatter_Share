@@ -2,6 +2,10 @@ import socket
 import threading
 import os
 import time
+import cv2
+import math
+import pickle
+import sys
 
 ENCODER="utf-8"
 
@@ -136,6 +140,8 @@ def startRecieve(host,port):
     
     time.sleep(0.1)
 
+    path= "C:\\Users\\HP\\Documents\\Chatter_Share\\target"
+
     print("Write the file name that you want to recieve.\nPlease type carefully so that it matches the file name (Type 'quit' to quit)")
     f=0
     while True:
@@ -147,7 +153,6 @@ def startRecieve(host,port):
             break
         
         fl=client_socket.recv(1024).decode()
-        path= "C:\\Users\\HP\\Documents\\Chatter_Share\\target"
 
         if fl=="ERROR File Not Found":
             print("File name Error...")
@@ -249,10 +254,59 @@ def FileShare():
             print("Closing File Sharing")
             client_socket.send(x.encode(ENCODER))
             client_socket.close()
+            server_socket.close()
             break
         else:
             print("Invalid Response...Try again\n")
 
+def videoShare():
+    max_length = 65000
+    host = "localhost"
+    port = 5000
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    cap = cv2.VideoCapture(0)
+    ret, frame = cap.read()
+
+    while ret:
+        # compress frame
+        retval, buffer = cv2.imencode(".jpg", frame)
+
+        if retval:
+            # convert to byte array
+            buffer = buffer.tobytes()
+            # get size of the frame
+            buffer_size = len(buffer)
+
+            num_of_packs = 1
+            if buffer_size > max_length:
+                num_of_packs = math.ceil(buffer_size/max_length)
+
+            frame_info = {"packs":num_of_packs}
+
+            # send the number of packs to be expected
+            print("Number of packs:", num_of_packs)
+            sock.sendto(pickle.dumps(frame_info), (host, port))
+            
+            left = 0
+            right = max_length
+
+            for i in range(num_of_packs):
+                print("left:", left)
+                print("right:", right)
+
+                # truncate data to send
+                data = buffer[left:right]
+                left = right
+                right += max_length
+
+                # send the frames accordingly
+                sock.sendto(data, (host, port))
+        
+        ret, frame = cap.read()
+
+    print("done")
     
 def main():
     print("What do you want to do?")
@@ -260,12 +314,15 @@ def main():
         print()
         print("*****Type 1 for file sharing*****")
         print("*****Type 2 for group chat*****")
+        print("*****Type 3 for video streaming*****")
         print("(Type 'quit' to stop the program)\n")
         x=input()
         if x=='1':
             FileShare()
         elif x=='2':
             GroupChat()
+        elif x=='3':
+            videoShare()
         elif x=='quit':
             break
         else:
